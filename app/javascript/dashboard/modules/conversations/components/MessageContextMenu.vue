@@ -272,6 +272,7 @@ export default {
         <MenuItem
           v-if="enabledOptions['pin']"
           :option="{
+            icon: 'star-emphasis',
             label: isPinned
               ? $t('CONVERSATION.CONTEXT_MENU.UNPIN')
               : $t('CONVERSATION.CONTEXT_MENU.PIN'),

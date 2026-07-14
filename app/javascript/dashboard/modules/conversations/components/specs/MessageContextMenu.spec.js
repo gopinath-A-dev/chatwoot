@@ -7,7 +7,12 @@ const menuItemStub = {
   props: ['option'],
   emits: ['click'],
   template: `
-    <button class="menu-item" type="button" @click="$emit('click', $event)">
+    <button
+      class="menu-item"
+      type="button"
+      :data-icon="option.icon"
+      @click="$emit('click', $event)"
+    >
       {{ option.label }}
     </button>
   `,
@@ -68,6 +73,15 @@ describe('MessageContextMenu', () => {
 
     expect(wrapper.text()).toContain('Unpin message');
     expect(wrapper.text()).not.toContain('Pin message');
+  });
+
+  it('passes a valid fluent icon to the pin action', () => {
+    const wrapper = mountComponent();
+    const pinItem = wrapper
+      .findAll('.menu-item')
+      .find(item => item.text() === 'Pin message');
+
+    expect(pinItem.attributes('data-icon')).toBe('star-emphasis');
   });
 
   it('dispatches togglePinMessage with the next pinned state', async () => {

@@ -850,5 +850,27 @@ describe('#addMentions', () => {
         pinnedMessage
       );
     });
+
+    it('rethrows the raw API error so response details are preserved', async () => {
+      const apiError = {
+        message: 'Request failed',
+        response: {
+          data: {
+            message: 'Cannot pin this message',
+          },
+        },
+      };
+      axios.post.mockRejectedValue(apiError);
+      const localCommit = vi.fn();
+
+      await expect(
+        actions.togglePinMessage(
+          { commit: localCommit },
+          { conversationId: 42, messageId: 7, pinned: true }
+        )
+      ).rejects.toBe(apiError);
+
+      expect(localCommit).not.toHaveBeenCalled();
+    });
   });
 });

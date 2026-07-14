@@ -371,16 +371,12 @@ const actions = {
     { commit },
     { conversationId, messageId, pinned }
   ) => {
-    try {
-      const { data } = await MessageApi.togglePin({
-        conversationId,
-        messageId,
-        pinned,
-      });
-      commit(types.ADD_MESSAGE, data);
-    } catch (error) {
-      throw new Error(error);
-    }
+    const { data } = await MessageApi.togglePin({
+      conversationId,
+      messageId,
+      pinned,
+    });
+    commit(types.ADD_MESSAGE, data);
   },
 
   deleteConversation: async ({ commit, dispatch }, conversationId) => {
