@@ -145,6 +145,7 @@ Rails.application.routes.draw do
               post :filter
             end
             scope module: :conversations do
+              get :pinned_messages, to: 'messages#pinned_messages'
               resources :messages, only: [:index, :create, :destroy, :update] do
                 member do
                   post :translate

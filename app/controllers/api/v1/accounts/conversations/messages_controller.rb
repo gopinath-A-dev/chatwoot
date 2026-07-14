@@ -5,6 +5,14 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     @messages = message_finder.perform
   end
 
+  def pinned_messages
+    @messages = @conversation.messages
+                             .includes(:attachments, :sender, sender: { avatar_attachment: [:blob] })
+                             .where(pinned: true)
+                             .reorder(pinned_at: :desc)
+    render :index
+  end
+
   def create
     user = Current.user || @resource
     mb = Messages::MessageBuilder.new(user, @conversation, params)

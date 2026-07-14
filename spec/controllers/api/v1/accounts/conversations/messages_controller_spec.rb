@@ -205,6 +205,80 @@ RSpec.describe 'Conversation Messages API', type: :request do
     end
   end
 
+  describe 'GET /api/v1/accounts/{account.id}/conversations/:conversation_id/pinned_messages' do
+    let(:conversation) { create(:conversation, account: account) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pinned_messages"
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user without access to conversation' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+
+      it 'returns unauthorized' do
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pinned_messages",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user with access to conversation' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+      let(:other_conversation) { create(:conversation, account: account) }
+      let(:older_pinned_message) do
+        create(:message, account: account, conversation: conversation, pinned: true, pinned_at: 2.hours.ago, pinned_by: agent)
+      end
+      let(:newer_pinned_message) do
+        create(:message, account: account, conversation: conversation, pinned: true, pinned_at: 1.hour.ago, pinned_by: agent)
+      end
+      let(:unpinned_message) { create(:message, account: account, conversation: conversation) }
+      let(:other_conversation_pinned_message) do
+        create(:message, account: account, conversation: other_conversation, pinned: true, pinned_at: Time.current, pinned_by: agent)
+      end
+
+      before do
+        create(:inbox_member, inbox: conversation.inbox, user: agent)
+      end
+
+      it 'returns only the conversation pinned messages ordered by pinned_at desc with attribution and sender' do
+        older_pinned_message
+        newer_pinned_message
+        unpinned_message
+        other_conversation_pinned_message
+
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pinned_messages",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+
+        payload = response.parsed_body['payload']
+        expect(payload.pluck('id')).to eq([newer_pinned_message.id, older_pinned_message.id])
+        expect(payload.pluck('pinned')).to eq([true, true])
+        expect(payload.first['pinned_at']).to eq(newer_pinned_message.pinned_at.to_i)
+        expect(payload.first['pinned_by']).to include('id' => agent.id, 'name' => agent.name)
+        expect(payload.first['sender']).to include('id' => newer_pinned_message.sender_id)
+      end
+
+      it 'returns an empty payload when the conversation has no pinned messages' do
+        unpinned_message
+
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/pinned_messages",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['payload']).to eq([])
+      end
+    end
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/conversations/:conversation_id/messages/:id/toggle_pin' do
     let(:message) { create(:message, account: account) }
     let(:conversation) { message.conversation }
