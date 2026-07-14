@@ -117,6 +117,25 @@ describe('#getters', () => {
       ]);
     });
 
+    it('returns conversations ordered by priority desc and createdAt asc if chatStatusFilter = priority_desc_created_at_asc', () => {
+      const state = {
+        allConversations: [
+          { id: 1, priority: 'high', created_at: 300 },
+          { id: 2, priority: 'urgent', created_at: 200 },
+          { id: 3, priority: 'high', created_at: 100 },
+          { id: 4, priority: null, created_at: 400 },
+        ],
+        chatSortFilter: 'priority_desc_created_at_asc',
+      };
+
+      expect(getters.getAllConversations(state)).toEqual([
+        { id: 2, priority: 'urgent', created_at: 200 },
+        { id: 3, priority: 'high', created_at: 100 },
+        { id: 1, priority: 'high', created_at: 300 },
+        { id: 4, priority: null, created_at: 400 },
+      ]);
+    });
+
     it('returns conversations ordered by longest waiting if chatStatusFilter = waiting_since_asc', () => {
       const state = {
         allConversations: [...conversations],
@@ -169,6 +188,49 @@ describe('#getters', () => {
           pinned: false,
           updated_at: 100,
           last_activity_at: 500,
+        },
+      ]);
+    });
+
+    it('applies a real-time unpinned update and re-sorts the conversation back into normal order', () => {
+      const unpinnedByServer = {
+        id: 1,
+        pinned: false,
+        updated_at: 300,
+      };
+      const state = {
+        allConversations: [
+          {
+            id: 1,
+            pinned: true,
+            updated_at: 100,
+            last_activity_at: 100,
+          },
+          {
+            id: 2,
+            pinned: false,
+            updated_at: 100,
+            last_activity_at: 500,
+          },
+        ],
+        chatSortFilter: 'last_activity_at_desc',
+        conversationFilters: {},
+      };
+
+      mutations[types.UPDATE_CONVERSATION](state, unpinnedByServer);
+
+      expect(getters.getAllConversations(state)).toEqual([
+        {
+          id: 2,
+          pinned: false,
+          updated_at: 100,
+          last_activity_at: 500,
+        },
+        {
+          id: 1,
+          pinned: false,
+          updated_at: 300,
+          last_activity_at: 100,
         },
       ]);
     });

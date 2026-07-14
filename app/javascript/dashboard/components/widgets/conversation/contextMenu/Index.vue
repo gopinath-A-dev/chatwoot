@@ -225,6 +225,7 @@ export default {
     pinOption() {
       return {
         key: MENU.PIN,
+        icon: 'star-emphasis',
         label: this.pinned
           ? this.$t('CONVERSATION.CARD_CONTEXT_MENU.UNPIN')
           : this.$t('CONVERSATION.CARD_CONTEXT_MENU.PIN'),

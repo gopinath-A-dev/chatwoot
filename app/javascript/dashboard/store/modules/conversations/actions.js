@@ -568,10 +568,6 @@ const actions = {
     }
   },
 
-  pinConversation(context, payload) {
-    return actions.togglePinConversation(context, payload);
-  },
-
   setCurrentChatPriority({ commit }, { priority, conversationId }) {
     commit(types.ASSIGN_PRIORITY, { priority, conversationId });
   },

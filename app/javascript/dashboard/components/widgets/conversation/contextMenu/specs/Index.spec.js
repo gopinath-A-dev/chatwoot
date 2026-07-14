@@ -38,7 +38,7 @@ const mountComponent = ({ pinned = false } = {}) =>
         MenuItem: {
           props: ['option'],
           template:
-            '<button type="button" class="menu-item">{{ option.label }}</button>',
+            '<button type="button" class="menu-item" :data-icon="option.icon">{{ option.label }}</button>',
         },
         MenuItemWithSubmenu: true,
         AgentLoadingPlaceholder: true,
@@ -59,6 +59,15 @@ describe('Conversation context menu', () => {
 
     expect(wrapper.text()).toContain('Unpin conversation');
     expect(wrapper.text()).not.toContain('Pin conversation');
+  });
+
+  it('passes an icon to the pin menu item', () => {
+    const wrapper = mountComponent({ pinned: false });
+    const pinItem = wrapper
+      .findAll('.menu-item')
+      .find(item => item.text() === 'Pin conversation');
+
+    expect(pinItem.attributes('data-icon')).toBe('star-emphasis');
   });
 
   it('emits pinConversation when the pin item is clicked', async () => {
