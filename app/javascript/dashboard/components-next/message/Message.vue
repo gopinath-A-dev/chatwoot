@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, computed, ref, toRefs } from 'vue';
+import { onMounted, computed, ref, toRefs, watch } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { provideMessageContext } from './provider.js';
 import { useTrack } from 'dashboard/composables';
@@ -519,6 +519,8 @@ const setupHighlightTimer = () => {
 };
 
 onMounted(setupHighlightTimer);
+
+watch(() => route.query.messageId, setupHighlightTimer);
 
 provideMessageContext({
   ...toRefs(props),

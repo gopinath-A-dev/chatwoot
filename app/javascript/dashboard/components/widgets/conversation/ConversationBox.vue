@@ -4,6 +4,7 @@ import ConversationHeader from './ConversationHeader.vue';
 import DashboardAppFrame from '../DashboardApp/Frame.vue';
 import EmptyState from './EmptyState/EmptyState.vue';
 import MessagesView from './MessagesView.vue';
+import PinnedMessagesPanel from './PinnedMessagesPanel.vue';
 
 export default {
   components: {
@@ -11,6 +12,7 @@ export default {
     DashboardAppFrame,
     EmptyState,
     MessagesView,
+    PinnedMessagesPanel,
   },
   props: {
     inboxId: {
@@ -32,7 +34,10 @@ export default {
     },
   },
   data() {
-    return { activeIndex: 0 };
+    return {
+      activeIndex: 0,
+      isPinnedMessagesPanelOpen: false,
+    };
   },
   computed: {
     ...mapGetters({
@@ -88,6 +93,12 @@ export default {
     onDashboardAppTabChange(index) {
       this.activeIndex = index;
     },
+    togglePinnedMessagesPanel() {
+      this.isPinnedMessagesPanelOpen = !this.isPinnedMessagesPanelOpen;
+    },
+    closePinnedMessagesPanel() {
+      this.isPinnedMessagesPanelOpen = false;
+    },
   },
 };
 </script>
@@ -103,9 +114,11 @@ export default {
       v-if="currentChat.id"
       :chat="currentChat"
       :show-back-button="isOnExpandedLayout && !isInboxView"
+      :is-pinned-messages-panel-open="isPinnedMessagesPanelOpen"
       :class="{
         'border-b border-b-n-weak !pt-2': !dashboardApps.length,
       }"
+      @toggle-pinned-messages="togglePinnedMessagesPanel"
     />
     <woot-tabs
       v-if="dashboardApps.length && currentChat.id"
@@ -127,6 +140,11 @@ export default {
         v-if="currentChat.id"
         :inbox-id="inboxId"
         :is-inbox-view="isInboxView"
+      />
+      <PinnedMessagesPanel
+        v-if="currentChat.id && isPinnedMessagesPanelOpen"
+        :conversation-id="currentChat.id"
+        @close="closePinnedMessagesPanel"
       />
       <EmptyState
         v-if="!currentChat.id && !isInboxView"

@@ -111,6 +111,7 @@
       "SNOOZED_UNTIL_NEXT_WEEK": "Snoozed until next week",
       "SNOOZED_UNTIL_NEXT_REPLY": "Snoozed until next reply",
       "WHATSAPP_CALL": "Start WhatsApp call",
+      "PINNED_MESSAGES": "Pinned messages",
       "WHATSAPP_CALL_FAILED": "Could not start the WhatsApp call.",
       "VOICE_CALL": "Start call",
       "VOICE_CALL_FAILED": "Could not start the call.",
@@ -123,6 +124,25 @@
         "MISSED": "missed",
         "DUE": "due"
       }
+    },
+    "PINNED_MESSAGES": {
+      "TITLE": "Pinned messages",
+      "CLOSE": "Close pinned messages",
+      "LOADING": "Loading pinned messages...",
+      "EMPTY_TITLE": "No pinned messages",
+      "EMPTY_DESCRIPTION": "Pinned messages in this conversation will appear here.",
+      "UNKNOWN_SENDER": "Unknown sender",
+      "UNKNOWN_PINNER": "Unknown agent",
+      "ATTRIBUTION": "Pinned by {name} on {time}",
+      "UNPIN": "Unpin",
+      "JUMP_TO_MESSAGE": "Jump to message",
+      "ATTACHMENT": "Attachment",
+      "IMAGE_ATTACHMENT": "Image attachment",
+      "AUDIO_ATTACHMENT": "Audio attachment",
+      "VIDEO_ATTACHMENT": "Video attachment",
+      "FILE_ATTACHMENT": "File attachment",
+      "LOCATION_ATTACHMENT": "Location attachment",
+      "CONTACT_ATTACHMENT": "Contact attachment"
     },
     "RESOLVE_DROPDOWN": {
       "MARK_PENDING": "Mark as pending",

@@ -9,6 +9,7 @@ import MoreActions from './MoreActions.vue';
 import Avatar from 'next/avatar/Avatar.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import ConversationCallButton from './ConversationCallButton.vue';
+import ButtonV4 from 'dashboard/components-next/button/Button.vue';
 import wootConstants from 'dashboard/constants/globals';
 import { conversationListPageURL } from 'dashboard/helper/URLHelper';
 import { snoozedReopenTime } from 'dashboard/helper/snoozeHelpers';
@@ -26,7 +27,13 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isPinnedMessagesPanelOpen: {
+    type: Boolean,
+    default: false,
+  },
 });
+
+const emit = defineEmits(['togglePinnedMessages']);
 
 const { t } = useI18n();
 const store = useStore();
@@ -175,6 +182,17 @@ const copyConversationId = async () => {
         class="hidden md:flex"
       />
       <ConversationCallButton :inbox="inbox" :chat="currentChat" />
+      <ButtonV4
+        v-tooltip="t('CONVERSATION.HEADER.PINNED_MESSAGES')"
+        :aria-label="t('CONVERSATION.HEADER.PINNED_MESSAGES')"
+        size="sm"
+        variant="ghost"
+        :color="isPinnedMessagesPanelOpen ? 'amber' : 'slate'"
+        icon="i-lucide-pin"
+        class="rounded-md"
+        data-testid="pinned-messages-button"
+        @click="emit('togglePinnedMessages')"
+      />
       <MoreActions :conversation-id="currentChat.id" />
     </div>
   </div>

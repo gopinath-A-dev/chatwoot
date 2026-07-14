@@ -43,6 +43,14 @@ describe('#ConversationAPI', () => {
         }
       );
     });
+
+    it('#getPinned', () => {
+      messageAPI.getPinned(12);
+
+      expect(axiosMock.get).toHaveBeenCalledWith(
+        '/api/v1/conversations/12/pinned_messages'
+      );
+    });
   });
   describe('#buildCreatePayload', () => {
     it('builds form payload if file is available', () => {

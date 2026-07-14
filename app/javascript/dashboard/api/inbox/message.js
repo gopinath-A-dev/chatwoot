@@ -106,6 +106,10 @@ class MessageApi extends ApiClient {
     return axios.get(`${this.url}/${conversationId}/messages`, { params });
   }
 
+  getPinned(conversationId) {
+    return axios.get(`${this.url}/${conversationId}/pinned_messages`);
+  }
+
   translateMessage(conversationId, messageId, targetLanguage) {
     return axios.post(
       `${this.url}/${conversationId}/messages/${messageId}/translate`,
