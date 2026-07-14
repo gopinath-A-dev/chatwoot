@@ -16,6 +16,7 @@ RSpec.describe Conversation do
     it { is_expected.to belong_to(:contact) }
     it { is_expected.to belong_to(:contact_inbox) }
     it { is_expected.to belong_to(:assignee).optional }
+    it { is_expected.to belong_to(:pinned_by).class_name('User').optional }
     it { is_expected.to belong_to(:team).optional }
     it { is_expected.to belong_to(:campaign).optional }
   end
@@ -178,6 +179,20 @@ RSpec.describe Conversation do
       conversation.additional_attributes[:conversation_language] = 'es'
       conversation.save!
       changed_attributes = conversation.previous_changes
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+        .with(described_class::CONVERSATION_UPDATED, kind_of(Time), conversation: conversation, notifiable_assignee_change: false,
+                                                                    changed_attributes: changed_attributes, performed_by: nil)
+    end
+
+    it 'includes pinned in conversation updated keys' do
+      expect(conversation.send(:list_of_keys)).to include('pinned')
+    end
+
+    it 'sends conversation updated event if pinned changes' do
+      conversation.toggle_pin(true, old_assignee)
+      changed_attributes = conversation.previous_changes
+
+      expect(changed_attributes.keys).to include('pinned')
       expect(Rails.configuration.dispatcher).to have_received(:dispatch)
         .with(described_class::CONVERSATION_UPDATED, kind_of(Time), conversation: conversation, notifiable_assignee_change: false,
                                                                     changed_attributes: changed_attributes, performed_by: nil)
@@ -392,6 +407,43 @@ RSpec.describe Conversation do
 
       expect(conversation.toggle_priority('urgent')).to be(true)
       expect(conversation.reload.priority).to eq('urgent')
+    end
+  end
+
+  describe '#toggle_pin' do
+    let(:account) { create(:account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let(:conversation) { create(:conversation, account: account, status: 'open') }
+
+    it 'defaults pinned to false when created' do
+      expect(conversation.pinned).to be(false)
+      expect(conversation.pinned_at).to be_nil
+      expect(conversation.pinned_by).to be_nil
+    end
+
+    it 'sets pinned attribution when pinned' do
+      original_updated_at = conversation.updated_at
+
+      travel_to 1.second.from_now do
+        expect(conversation.toggle_pin(true, agent)).to be(true)
+        conversation.reload
+
+        expect(conversation.pinned).to be(true)
+        expect(conversation.pinned_at.to_i).to eq(Time.current.to_i)
+        expect(conversation.pinned_by).to eq(agent)
+        expect(conversation.updated_at).to be > original_updated_at
+      end
+    end
+
+    it 'clears pinned attribution when unpinned' do
+      conversation.toggle_pin(true, agent)
+
+      expect(conversation.toggle_pin(false, agent)).to be(true)
+      conversation.reload
+
+      expect(conversation.pinned).to be(false)
+      expect(conversation.pinned_at).to be_nil
+      expect(conversation.pinned_by).to be_nil
     end
   end
 

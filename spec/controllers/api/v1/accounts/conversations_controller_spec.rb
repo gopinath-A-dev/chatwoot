@@ -683,6 +683,87 @@ RSpec.describe 'Conversations API', type: :request do
     end
   end
 
+  describe 'POST /api/v1/accounts/{account.id}/conversations/:id/toggle_pin' do
+    let(:conversation) { create(:conversation, account: account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_pin"
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user' do
+      it 'does not update the conversation if the agent does not have access to it' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_pin",
+             headers: agent.create_new_auth_token,
+             params: { pinned: true },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(conversation.reload.pinned).to be(false)
+      end
+
+      it 'pins the conversation and tracks attribution' do
+        create(:inbox_member, user: agent, inbox: conversation.inbox)
+
+        freeze_time do
+          post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_pin",
+               headers: agent.create_new_auth_token,
+               params: { pinned: true },
+               as: :json
+
+          expect(response).to have_http_status(:success)
+          expect(conversation.reload.pinned).to be(true)
+          expect(conversation.pinned_at.to_i).to eq(Time.current.to_i)
+          expect(conversation.pinned_by).to eq(agent)
+        end
+      end
+
+      it 'exposes pinned fields in the conversation JSON' do
+        create(:inbox_member, user: agent, inbox: conversation.inbox)
+
+        freeze_time do
+          conversation.update!(pinned: true, pinned_at: Time.current, pinned_by: agent)
+
+          get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}",
+              headers: agent.create_new_auth_token,
+              as: :json
+
+          expect(response).to have_http_status(:success)
+          expect(response.parsed_body['pinned']).to be(true)
+          expect(response.parsed_body['pinned_at']).to eq(Time.current.to_i)
+          expect(response.parsed_body['pinned_by']).to include('id' => agent.id, 'name' => agent.name)
+        end
+      end
+
+      it 'unpins the conversation and clears attribution fields' do
+        create(:inbox_member, user: agent, inbox: conversation.inbox)
+        conversation.update!(pinned: true, pinned_at: 1.hour.ago, pinned_by: agent)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_pin",
+             headers: agent.create_new_auth_token,
+             params: { pinned: false },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.pinned).to be(false)
+        expect(conversation.pinned_at).to be_nil
+        expect(conversation.pinned_by).to be_nil
+
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response.parsed_body['pinned']).to be(false)
+        expect(response.parsed_body['pinned_at']).to be_nil
+        expect(response.parsed_body['pinned_by']).to be_nil
+      end
+    end
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/conversations/:id/toggle_typing_status' do
     let(:conversation) { create(:conversation, account: account) }
 

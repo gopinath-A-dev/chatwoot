@@ -12,6 +12,8 @@
 #  first_reply_created_at :datetime
 #  identifier             :string
 #  last_activity_at       :datetime         not null
+#  pinned                 :boolean          default(FALSE), not null
+#  pinned_at              :datetime
 #  priority               :integer
 #  snoozed_until          :datetime
 #  status                 :integer          default("open"), not null
@@ -27,6 +29,7 @@
 #  contact_inbox_id       :bigint
 #  display_id             :integer          not null
 #  inbox_id               :integer          not null
+#  pinned_by_id           :bigint
 #  sla_policy_id          :bigint
 #  team_id                :bigint
 #
@@ -35,6 +38,7 @@
 #  conv_acid_inbid_stat_asgnid_idx                    (account_id,inbox_id,status,assignee_id)
 #  index_conversations_on_account_id                  (account_id)
 #  index_conversations_on_account_id_and_display_id   (account_id,display_id) UNIQUE
+#  index_conversations_on_account_id_and_pinned       (account_id,pinned)
 #  index_conversations_on_assignee_id_and_account_id  (assignee_id,account_id)
 #  index_conversations_on_campaign_id                 (campaign_id)
 #  index_conversations_on_contact_id                  (contact_id)
@@ -103,6 +107,7 @@ class Conversation < ApplicationRecord
   belongs_to :account
   belongs_to :inbox
   belongs_to :assignee, class_name: 'User', optional: true, inverse_of: :assigned_conversations
+  belongs_to :pinned_by, class_name: 'User', optional: true
   belongs_to :assignee_agent_bot, class_name: 'AgentBot', optional: true
   belongs_to :contact
   belongs_to :contact_inbox
@@ -160,6 +165,13 @@ class Conversation < ApplicationRecord
 
   def toggle_priority(priority = nil)
     self.priority = priority.presence
+    save
+  end
+
+  def toggle_pin(pinned, user = Current.user)
+    self.pinned = ActiveModel::Type::Boolean.new.cast(pinned)
+    self.pinned_at = self.pinned ? Time.current : nil
+    self.pinned_by = self.pinned && user.is_a?(User) ? user : nil
     save
   end
 
@@ -309,7 +321,7 @@ class Conversation < ApplicationRecord
 
   def list_of_keys
     %w[team_id assignee_id assignee_agent_bot_id status snoozed_until custom_attributes label_list waiting_since
-       first_reply_created_at priority]
+       first_reply_created_at priority pinned]
   end
 
   def allowed_keys?
