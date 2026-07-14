@@ -316,6 +316,34 @@ RSpec.describe 'Conversation Messages API', type: :request do
         end
       end
 
+      it 'renders the updated message JSON when pinning and unpinning' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{message.id}/toggle_pin",
+             headers: agent.create_new_auth_token,
+             params: { pinned: true },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body).to include(
+          'id' => message.id,
+          'conversation_id' => conversation.display_id,
+          'pinned' => true
+        )
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{message.id}/toggle_pin",
+             headers: agent.create_new_auth_token,
+             params: { pinned: false },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body).to include(
+          'id' => message.id,
+          'conversation_id' => conversation.display_id,
+          'pinned' => false,
+          'pinned_at' => nil,
+          'pinned_by' => nil
+        )
+      end
+
       it 'unpins the message and clears pinned serializer fields' do
         message.update!(pinned: true, pinned_at: 1.hour.ago, pinned_by: agent)
 
@@ -343,6 +371,27 @@ RSpec.describe 'Conversation Messages API', type: :request do
 
         expect(response).to have_http_status(:not_found)
         expect(other_message.reload.pinned).to be(false)
+      end
+
+      it 'returns an error instead of stale message JSON when the pin update fails' do
+        abort_save = lambda do
+          errors.add(:base, 'Pin update failed')
+          throw(:abort)
+        end
+        Message.set_callback(:save, :before, abort_save)
+
+        begin
+          post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{message.id}/toggle_pin",
+               headers: agent.create_new_auth_token,
+               params: { pinned: true },
+               as: :json
+        ensure
+          Message.skip_callback(:save, :before, abort_save)
+        end
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to eq('Pin update failed')
+        expect(message.reload.pinned).to be(false)
       end
     end
   end

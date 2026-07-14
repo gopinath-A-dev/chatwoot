@@ -27,9 +27,12 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def toggle_pin
-    message.toggle_pin(permitted_params[:pinned], Current.user)
     @message = message
-    render :update
+    if @message.toggle_pin(permitted_params[:pinned], Current.user)
+      render :update
+    else
+      render_could_not_create_error(@message.errors.full_messages.to_sentence)
+    end
   end
 
   def destroy

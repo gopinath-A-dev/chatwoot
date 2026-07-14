@@ -722,6 +722,24 @@ RSpec.describe 'Conversations API', type: :request do
         end
       end
 
+      it 'returns a plain ok response without rendering a template' do
+        create(:inbox_member, user: agent, inbox: conversation.inbox)
+        abort_save = -> { throw(:abort) }
+        Conversation.set_callback(:save, :before, abort_save)
+
+        begin
+          post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_pin",
+               headers: agent.create_new_auth_token,
+               params: { pinned: true },
+               as: :json
+        ensure
+          Conversation.skip_callback(:save, :before, abort_save)
+        end
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to be_blank
+      end
+
       it 'exposes pinned fields in the conversation JSON' do
         create(:inbox_member, user: agent, inbox: conversation.inbox)
 
