@@ -735,6 +735,48 @@ describe('#mutations', () => {
     });
   });
 
+  describe('#TOGGLE_CONVERSATION_PIN', () => {
+    it('updates only pin fields for the matching conversation', () => {
+      const pinnedBy = { id: 1, name: 'John Doe' };
+      const state = {
+        selectedChatId: 1,
+        allConversations: [
+          {
+            id: 1,
+            pinned: false,
+            pinned_at: null,
+            pinned_by: null,
+            unread_count: 3,
+            status: 'open',
+            priority: 'high',
+            meta: { assignee: { id: 2, name: 'Jane Agent' } },
+          },
+          { id: 2, pinned: false },
+        ],
+      };
+
+      mutations[types.TOGGLE_CONVERSATION_PIN](state, {
+        conversationId: 1,
+        pinned: true,
+        pinnedAt: 1784030400,
+        pinnedBy,
+      });
+
+      expect(state.selectedChatId).toBe(1);
+      expect(state.allConversations[0]).toEqual({
+        id: 1,
+        pinned: true,
+        pinned_at: 1784030400,
+        pinned_by: pinnedBy,
+        unread_count: 3,
+        status: 'open',
+        priority: 'high',
+        meta: { assignee: { id: 2, name: 'Jane Agent' } },
+      });
+      expect(state.allConversations[1]).toEqual({ id: 2, pinned: false });
+    });
+  });
+
   describe('#MUTE_CONVERSATION', () => {
     it('should mute selected conversation', () => {
       const state = {

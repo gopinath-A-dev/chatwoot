@@ -57,4 +57,20 @@ describe('ConversationCard', () => {
 
     expect(wrapper.findComponent({ name: 'CardLabels' }).exists()).toBe(false);
   });
+
+  it('renders a pin indicator when the conversation is pinned', () => {
+    const wrapper = mountComponent({ pinned: true });
+
+    expect(
+      wrapper.find('[data-testid="conversation-pin-indicator"]').exists()
+    ).toBe(true);
+  });
+
+  it('does not render a pin indicator when the conversation is not pinned', () => {
+    const wrapper = mountComponent({ pinned: false });
+
+    expect(
+      wrapper.find('[data-testid="conversation-pin-indicator"]').exists()
+    ).toBe(false);
+  });
 });

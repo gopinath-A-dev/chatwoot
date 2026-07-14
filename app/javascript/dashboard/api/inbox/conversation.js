@@ -62,6 +62,12 @@ class ConversationApi extends ApiClient {
     });
   }
 
+  togglePin({ conversationId, pinned }) {
+    return axios.post(`${this.url}/${conversationId}/toggle_pin`, {
+      pinned,
+    });
+  }
+
   assignAgent({ conversationId, agentId, assigneeType }) {
     return axios.post(`${this.url}/${conversationId}/assignments`, {
       assignee_id: agentId,

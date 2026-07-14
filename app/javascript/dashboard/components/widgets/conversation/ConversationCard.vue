@@ -226,6 +226,12 @@ watch(
             :conversation-id="chat.id"
           />
         </span>
+        <span
+          v-if="chat.pinned"
+          data-testid="conversation-pin-indicator"
+          class="i-lucide-pin size-3.5 mt-1 text-n-amber-9 ltr:ml-auto rtl:mr-auto"
+          aria-hidden="true"
+        />
         <UnreadBadge
           v-if="hasUnread"
           :count="unreadCount"

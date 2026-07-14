@@ -531,6 +531,31 @@ const actions = {
     }
   },
 
+  togglePinConversation: async (
+    { commit, rootGetters },
+    { conversationId, pinned }
+  ) => {
+    commit(types.TOGGLE_CONVERSATION_PIN, {
+      conversationId,
+      pinned,
+      pinnedAt: pinned ? Math.floor(Date.now() / 1000) : null,
+      pinnedBy: pinned ? rootGetters?.getCurrentUser : null,
+    });
+
+    try {
+      await ConversationApi.togglePin({
+        conversationId,
+        pinned,
+      });
+    } catch (error) {
+      // Handle error
+    }
+  },
+
+  pinConversation(context, payload) {
+    return actions.togglePinConversation(context, payload);
+  },
+
   setCurrentChatPriority({ commit }, { priority, conversationId }) {
     commit(types.ASSIGN_PRIORITY, { priority, conversationId });
   },

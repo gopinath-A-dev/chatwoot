@@ -135,6 +135,18 @@ export const mutations = {
     chat.priority = priority;
   },
 
+  [types.TOGGLE_CONVERSATION_PIN](
+    _state,
+    { conversationId, pinned, pinnedAt, pinnedBy }
+  ) {
+    const chat = getConversationById(_state)(conversationId);
+    if (!chat) return;
+
+    chat.pinned = pinned;
+    chat.pinned_at = pinned ? pinnedAt : null;
+    chat.pinned_by = pinned ? pinnedBy : null;
+  },
+
   [types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES](
     _state,
     { conversationId, customAttributes }

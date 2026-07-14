@@ -16,6 +16,7 @@ const MENU = {
   MARK_AS_READ: 'mark-as-read',
   MARK_AS_UNREAD: 'mark-as-unread',
   PRIORITY: 'priority',
+  PIN: 'pin',
   STATUS: 'status',
   SNOOZE: 'snooze',
   AGENT: 'agent',
@@ -53,6 +54,10 @@ export default {
       type: String,
       default: null,
     },
+    pinned: {
+      type: Boolean,
+      default: false,
+    },
     conversationLabels: {
       type: Array,
       default: () => [],
@@ -75,6 +80,7 @@ export default {
     'assignTeam',
     'assignLabel',
     'removeLabel',
+    'pinConversation',
     'deleteConversation',
     'close',
   ],
@@ -216,6 +222,14 @@ export default {
       // Don't show snooze if the conversation is already snoozed/resolved/pending
       return this.status === wootConstants.STATUS_TYPE.OPEN;
     },
+    pinOption() {
+      return {
+        key: MENU.PIN,
+        label: this.pinned
+          ? this.$t('CONVERSATION.CARD_CONTEXT_MENU.UNPIN')
+          : this.$t('CONVERSATION.CARD_CONTEXT_MENU.PIN'),
+      };
+    },
   },
   mounted() {
     this.$store.dispatch('inboxAssignableAgents/fetch', [this.inboxId]);
@@ -235,6 +249,9 @@ export default {
     },
     assignPriority(priority) {
       this.$emit('assignPriority', priority);
+    },
+    togglePinConversation() {
+      this.$emit('pinConversation', !this.pinned);
     },
     deleteConversation() {
       this.$emit('deleteConversation', this.chatId);
@@ -295,6 +312,14 @@ export default {
         :option="readOption"
         variant="icon"
         @click.stop="$emit('markAsRead')"
+      />
+      <hr class="m-1 rounded border-b border-n-weak dark:border-n-weak" />
+    </template>
+    <template v-if="isAllowed([MENU.PIN])">
+      <MenuItem
+        :option="pinOption"
+        variant="icon"
+        @click.stop="togglePinConversation"
       />
       <hr class="m-1 rounded border-b border-n-weak dark:border-n-weak" />
     </template>

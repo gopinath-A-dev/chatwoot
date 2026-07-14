@@ -798,4 +798,30 @@ describe('#addMentions', () => {
       ]);
     });
   });
+
+  describe('#togglePinConversation', () => {
+    it('optimistically commits pin state and calls toggle pin API', async () => {
+      vi.spyOn(Date, 'now').mockReturnValue(1784030400000);
+      axios.post.mockResolvedValue({});
+      const localCommit = vi.fn();
+      const currentUser = { id: 1, name: 'John Doe' };
+
+      await actions.togglePinConversation(
+        { commit: localCommit, rootGetters: { getCurrentUser: currentUser } },
+        { conversationId: 42, pinned: true }
+      );
+
+      expect(localCommit).toHaveBeenCalledWith(types.TOGGLE_CONVERSATION_PIN, {
+        conversationId: 42,
+        pinned: true,
+        pinnedAt: 1784030400,
+        pinnedBy: currentUser,
+      });
+      expect(axios.post).toHaveBeenCalledWith(
+        expect.stringContaining('/conversations/42/toggle_pin'),
+        { pinned: true }
+      );
+      Date.now.mockRestore();
+    });
+  });
 });

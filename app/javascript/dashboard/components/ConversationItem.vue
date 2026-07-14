@@ -172,6 +172,14 @@ const onAssignPriority = priority => {
   closeContextMenu();
 };
 
+const onPinConversation = pinned => {
+  store.dispatch('togglePinConversation', {
+    conversationId: props.source.id,
+    pinned,
+  });
+  closeContextMenu();
+};
+
 const onDeleteConversation = () => {
   deleteConversation(props.source.id);
   closeContextMenu();
@@ -225,6 +233,7 @@ const onDeleteConversation = () => {
       :status="source.status"
       :inbox-id="inbox.id"
       :priority="source.priority"
+      :pinned="source.pinned"
       :chat-id="source.id"
       :has-unread-messages="source.unread_count > 0"
       :conversation-labels="source.labels"
@@ -237,6 +246,7 @@ const onDeleteConversation = () => {
       @mark-as-unread="onMarkAsUnread"
       @mark-as-read="onMarkAsRead"
       @assign-priority="onAssignPriority"
+      @pin-conversation="onPinConversation"
       @delete-conversation="onDeleteConversation"
       @close="closeContextMenu"
     />

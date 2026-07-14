@@ -177,6 +177,13 @@ const selectedModel = computed({
         />
       </div>
 
+      <span
+        v-if="chat.pinned"
+        data-testid="conversation-pin-indicator"
+        class="i-lucide-pin size-3.5 text-n-amber-9 flex-shrink-0"
+        aria-hidden="true"
+      />
+
       <div v-if="hasSlaPolicyId" class="flex-shrink-0">
         <SLACardLabel ref="slaCardLabel" :chat="chat" />
       </div>
