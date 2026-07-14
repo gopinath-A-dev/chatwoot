@@ -162,6 +162,10 @@ const sortConfig = {
 };
 
 export const sortComparator = (a, b, sortKey) => {
+  if (Boolean(a.pinned) !== Boolean(b.pinned)) {
+    return a.pinned ? -1 : 1;
+  }
+
   const [sortMethod, sortDirection] =
     SORT_OPTIONS[sortKey] || SORT_OPTIONS.last_activity_at_desc;
   return sortConfig[sortMethod](a, b, sortDirection);

@@ -15,8 +15,7 @@ class Conversations::EventDataPresenter < SimpleDelegator
       snoozed_until: snoozed_until,
       unread_count: unread_incoming_messages.count,
       first_reply_created_at: first_reply_created_at,
-      priority: priority,
-      waiting_since: waiting_since.to_i,
+      **conversation_state,
       **push_timestamps
     }
   end
@@ -37,6 +36,16 @@ class Conversations::EventDataPresenter < SimpleDelegator
 
   def webhook_push_messages
     [messages.where(account_id: account_id).chat.last&.webhook_push_event_data].compact
+  end
+
+  def conversation_state
+    {
+      priority: priority,
+      waiting_since: waiting_since.to_i,
+      pinned: pinned,
+      pinned_at: pinned_at&.to_i,
+      pinned_by: pinned_by&.push_event_data
+    }
   end
 
   def push_meta

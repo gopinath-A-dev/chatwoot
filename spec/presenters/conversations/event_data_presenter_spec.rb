@@ -35,6 +35,9 @@ RSpec.describe Conversations::EventDataPresenter do
         updated_at: conversation.updated_at.to_f,
         waiting_since: conversation.waiting_since.to_i,
         priority: nil,
+        pinned: false,
+        pinned_at: nil,
+        pinned_by: nil,
         unread_count: 0
       }
     end
@@ -42,6 +45,18 @@ RSpec.describe Conversations::EventDataPresenter do
     it 'returns push event payload' do
       # the exceptions are the values that would be added in enterprise edition.
       expect(presenter.push_data.except(:applied_sla, :sla_events)).to include(expected_data)
+    end
+
+    it 'includes pinned conversation state for real-time list updates' do
+      agent = create(:user, account: conversation.account)
+      pinned_at = Time.current.change(usec: 0)
+      conversation.update!(pinned: true, pinned_at: pinned_at, pinned_by: agent)
+
+      expect(presenter.push_data).to include(
+        pinned: true,
+        pinned_at: pinned_at.to_i,
+        pinned_by: agent.push_event_data
+      )
     end
   end
 

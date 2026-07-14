@@ -1,5 +1,7 @@
 import commonHelpers from '../../../../helper/commons';
 import getters from '../../conversations/getters';
+import types from '../../../mutation-types';
+import { mutations } from '../../conversations';
 /*
   Order of conversations in the fixture is as follows:
   - lastActivity: c0 < c3 < c2 < c1
@@ -125,6 +127,49 @@ describe('#getters', () => {
         conversations[3],
         conversations[2],
         conversations[0],
+      ]);
+    });
+
+    it('applies a real-time pinned update and re-sorts the conversation to the top', () => {
+      const pinnedByServer = {
+        id: 1,
+        pinned: true,
+        updated_at: 300,
+      };
+      const state = {
+        allConversations: [
+          {
+            id: 1,
+            pinned: false,
+            updated_at: 100,
+            last_activity_at: 100,
+          },
+          {
+            id: 2,
+            pinned: false,
+            updated_at: 100,
+            last_activity_at: 500,
+          },
+        ],
+        chatSortFilter: 'last_activity_at_desc',
+        conversationFilters: {},
+      };
+
+      mutations[types.UPDATE_CONVERSATION](state, pinnedByServer);
+
+      expect(getters.getAllConversations(state)).toEqual([
+        {
+          id: 1,
+          pinned: true,
+          updated_at: 300,
+          last_activity_at: 100,
+        },
+        {
+          id: 2,
+          pinned: false,
+          updated_at: 100,
+          last_activity_at: 500,
+        },
       ]);
     });
   });
