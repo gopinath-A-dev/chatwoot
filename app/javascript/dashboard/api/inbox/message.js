@@ -114,6 +114,15 @@ class MessageApi extends ApiClient {
       }
     );
   }
+
+  togglePin({ conversationId, messageId, pinned }) {
+    return axios.post(
+      `${this.url}/${conversationId}/messages/${messageId}/toggle_pin`,
+      {
+        pinned,
+      }
+    );
+  }
 }
 
 export default new MessageApi();

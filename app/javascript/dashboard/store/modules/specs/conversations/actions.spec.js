@@ -824,4 +824,31 @@ describe('#addMentions', () => {
       Date.now.mockRestore();
     });
   });
+
+  describe('#togglePinMessage', () => {
+    it('calls toggle pin API and commits the updated message', async () => {
+      const pinnedMessage = {
+        id: 7,
+        conversation_id: 42,
+        content: 'Pinned message',
+        pinned: true,
+      };
+      axios.post.mockResolvedValue({ data: pinnedMessage });
+      const localCommit = vi.fn();
+
+      await actions.togglePinMessage(
+        { commit: localCommit },
+        { conversationId: 42, messageId: 7, pinned: true }
+      );
+
+      expect(axios.post).toHaveBeenCalledWith(
+        expect.stringContaining('/conversations/42/messages/7/toggle_pin'),
+        { pinned: true }
+      );
+      expect(localCommit).toHaveBeenCalledWith(
+        types.ADD_MESSAGE,
+        pinnedMessage
+      );
+    });
+  });
 });

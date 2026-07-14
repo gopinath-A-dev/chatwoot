@@ -79,6 +79,9 @@ export default {
     messageContent() {
       return this.message.content;
     },
+    isPinned() {
+      return !!this.message.pinned;
+    },
     contentAttributes() {
       return useSnakeCase(
         this.message.content_attributes ?? this.message.contentAttributes
@@ -139,6 +142,18 @@ export default {
     handleReplyTo() {
       this.$emit('replyTo', this.message);
       this.handleClose();
+    },
+    async handleTogglePin() {
+      try {
+        await this.$store.dispatch('togglePinMessage', {
+          conversationId: this.conversationId,
+          messageId: this.messageId,
+          pinned: !this.isPinned,
+        });
+        this.handleClose();
+      } catch (error) {
+        useAlert(parseAPIErrorResponse(error));
+      }
     },
     openDeleteModal() {
       this.handleClose();
@@ -253,6 +268,16 @@ export default {
           }"
           variant="icon"
           @click.stop="showCannedResponseModal"
+        />
+        <MenuItem
+          v-if="enabledOptions['pin']"
+          :option="{
+            label: isPinned
+              ? $t('CONVERSATION.CONTEXT_MENU.UNPIN')
+              : $t('CONVERSATION.CONTEXT_MENU.PIN'),
+          }"
+          variant="icon"
+          @click.stop="handleTogglePin"
         />
         <hr v-if="enabledOptions['report']" />
         <MenuItem

@@ -367,6 +367,22 @@ const actions = {
     }
   },
 
+  togglePinMessage: async (
+    { commit },
+    { conversationId, messageId, pinned }
+  ) => {
+    try {
+      const { data } = await MessageApi.togglePin({
+        conversationId,
+        messageId,
+        pinned,
+      });
+      commit(types.ADD_MESSAGE, data);
+    } catch (error) {
+      throw new Error(error);
+    }
+  },
+
   deleteConversation: async ({ commit, dispatch }, conversationId) => {
     try {
       await ConversationApi.delete(conversationId);

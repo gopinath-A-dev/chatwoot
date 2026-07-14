@@ -130,6 +130,7 @@ const props = defineProps({
   inboxSupportsReplyTo: { type: Object, default: () => ({}) },
   inReplyTo: { type: Object, default: null }, // eslint-disable-line vue/no-unused-properties
   isEmailInbox: { type: Boolean, default: false },
+  pinned: { type: Boolean, default: false },
   private: { type: Boolean, default: false },
   additionalAttributes: { type: Object, default: () => ({}) }, // eslint-disable-line vue/no-unused-properties
   sender: { type: Object, default: null },
@@ -371,6 +372,7 @@ const payloadForContextMenu = computed(() => {
     content_attributes: props.contentAttributes,
     content: props.content,
     conversation_id: props.conversationId,
+    pinned: props.pinned,
   };
 });
 
@@ -396,6 +398,7 @@ const contextMenuEnabledOptions = computed(() => {
       !props.private &&
       props.inboxSupportsReplyTo.outgoing &&
       !isFailedOrProcessing,
+    pin: !isFailedOrProcessing && !isMessageDeleted.value,
     report:
       isOnChatwootCloud.value &&
       isCaptainMessage.value &&
@@ -567,13 +570,19 @@ provideMessageContext({
         <Avatar v-bind="avatarInfo" :size="24" />
       </div>
       <div
-        class="[grid-area:bubble] flex min-w-0"
+        class="[grid-area:bubble] flex min-w-0 gap-1 items-start"
         :class="{
           'ltr:ml-8 rtl:mr-8 justify-end': orientation === ORIENTATION.RIGHT,
           'ltr:mr-8 rtl:ml-8': orientation === ORIENTATION.LEFT,
         }"
         @contextmenu="openContextMenu($event)"
       >
+        <span
+          v-if="props.pinned"
+          data-testid="message-pin-indicator"
+          class="i-lucide-pin mt-1 size-3.5 text-n-amber-9 flex-shrink-0"
+          aria-hidden="true"
+        />
         <Component :is="componentToRender" />
       </div>
       <MessageError
