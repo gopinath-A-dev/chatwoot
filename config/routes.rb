@@ -149,6 +149,7 @@ Rails.application.routes.draw do
                 member do
                   post :translate
                   post :retry
+                  post :toggle_pin
                 end
               end
               resources :assignments, only: [:create]

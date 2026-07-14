@@ -18,6 +18,12 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     @message = message
   end
 
+  def toggle_pin
+    message.toggle_pin(permitted_params[:pinned], Current.user)
+    @message = message
+    render :update
+  end
+
   def destroy
     ActiveRecord::Base.transaction do
       message.update!(content: I18n.t('conversations.messages.deleted'), content_type: :text, content_attributes: { deleted: true })
@@ -68,7 +74,7 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def permitted_params
-    params.permit(:id, :target_language, :status, :external_error)
+    params.permit(:id, :target_language, :status, :external_error, :pinned)
   end
 
   def already_translated_content_available?

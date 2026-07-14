@@ -9,6 +9,16 @@ json.status message.status
 json.content_attributes message.content_attributes
 json.created_at message.created_at.to_i
 json.private message.private
+json.pinned message.pinned
+json.pinned_at message.pinned_at&.to_i
+if message.pinned_by
+  json.pinned_by do
+    json.id message.pinned_by.id
+    json.name message.pinned_by.name
+  end
+else
+  json.pinned_by nil
+end
 json.source_id message.source_id
 json.sender message.sender.push_event_data if message.sender
 json.attachments message.attachments.map(&:push_event_data) if message.attachments.present?

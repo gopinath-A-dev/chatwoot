@@ -11,6 +11,8 @@
 #  message_type              :integer          not null
 #  private                   :boolean          default(FALSE), not null
 #  processed_message_content :text
+#  pinned                    :boolean          default(FALSE), not null
+#  pinned_at                 :datetime
 #  sender_type               :string
 #  sentiment                 :jsonb
 #  status                    :integer          default("sent")
@@ -19,6 +21,7 @@
 #  account_id                :integer          not null
 #  conversation_id           :integer          not null
 #  inbox_id                  :integer          not null
+#  pinned_by_id              :bigint
 #  sender_id                 :bigint
 #  source_id                 :text
 #
@@ -32,9 +35,11 @@
 #  index_messages_on_content                            (content) USING gin
 #  index_messages_on_conversation_account_type_created  (conversation_id,account_id,message_type,created_at)
 #  index_messages_on_conversation_id                    (conversation_id)
+#  index_messages_on_conversation_id_and_pinned         (conversation_id,pinned)
 #  index_messages_on_created_at                         (created_at)
 #  index_messages_on_inbox_id                           (inbox_id)
 #  index_messages_on_sender_and_created                 (sender_type,sender_id,created_at)
+#  index_messages_on_sender_type_and_sender_id          (sender_type,sender_id)
 #  index_messages_on_source_id                          (source_id)
 #
 
@@ -129,6 +134,7 @@ class Message < ApplicationRecord
   belongs_to :inbox
   belongs_to :conversation
   belongs_to :sender, polymorphic: true, optional: true
+  belongs_to :pinned_by, class_name: 'User', optional: true
 
   has_many :attachments, dependent: :destroy, autosave: true, before_add: :validate_attachments_limit
   has_one :csat_survey_response, dependent: :destroy_async
@@ -152,6 +158,7 @@ class Message < ApplicationRecord
     )
     data[:echo_id] = echo_id if echo_id.present?
     data[:attachments] = attachments.map(&:push_event_data) if attachments.present?
+    data[:pinned_by] = pinned_by_push_event_data
     merge_sender_attributes(data)
   end
 
@@ -195,6 +202,13 @@ class Message < ApplicationRecord
     }
     data[:attachments] = attachments.map(&:push_event_data) if attachments.present?
     data
+  end
+
+  def toggle_pin(pinned, user = Current.user)
+    self.pinned = ActiveModel::Type::Boolean.new.cast(pinned)
+    self.pinned_at = self.pinned ? Time.current : nil
+    self.pinned_by = self.pinned && user.is_a?(User) ? user : nil
+    save
   end
 
   # Method to get content with survey URL for outgoing channel delivery
@@ -284,6 +298,12 @@ class Message < ApplicationRecord
   end
 
   private
+
+  def pinned_by_push_event_data
+    return if pinned_by.blank?
+
+    { id: pinned_by.id, name: pinned_by.name }
+  end
 
   def prevent_message_flooding
     # Added this to cover the validation specs in messages

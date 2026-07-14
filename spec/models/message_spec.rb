@@ -16,6 +16,10 @@ RSpec.describe Message do
     it { is_expected.to validate_presence_of(:account_id) }
   end
 
+  context 'with associations' do
+    it { is_expected.to belong_to(:pinned_by).class_name('User').optional }
+  end
+
   describe 'length validations' do
     let!(:message) { create(:message) }
 
@@ -130,6 +134,9 @@ RSpec.describe Message do
         message_type: message.message_type_before_type_cast,
         private: message.private,
         processed_message_content: message.processed_message_content,
+        pinned: false,
+        pinned_at: nil,
+        pinned_by_id: nil,
         sender_id: message.sender_id,
         sender_type: message.sender_type,
         source_id: message.source_id,
@@ -144,6 +151,7 @@ RSpec.describe Message do
           unread_count: message.conversation.unread_incoming_messages.count
         },
         sentiment: {},
+        pinned_by: nil,
         sender: message.sender.push_event_data,
         echo_id: 'random-echo_id'
       }
@@ -151,6 +159,62 @@ RSpec.describe Message do
 
     it 'returns push event payload' do
       expect(push_event_data).to eq(expected_data)
+    end
+  end
+
+  describe '#toggle_pin' do
+    let(:account) { create(:account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let(:message) { create(:message, account: account) }
+
+    before do
+      allow(Rails.configuration.dispatcher).to receive(:dispatch)
+    end
+
+    it 'defaults pinned to false when created' do
+      expect(message.pinned).to be(false)
+      expect(message.pinned_at).to be_nil
+      expect(message.pinned_by).to be_nil
+    end
+
+    it 'sets pinned attribution when pinned' do
+      travel_to 1.second.from_now do
+        expect(message.toggle_pin(true, agent)).to be(true)
+        message.reload
+
+        expect(message.pinned).to be(true)
+        expect(message.pinned_at.to_i).to eq(Time.current.to_i)
+        expect(message.pinned_by).to eq(agent)
+      end
+    end
+
+    it 'clears pinned attribution when unpinned' do
+      message.toggle_pin(true, agent)
+
+      expect(message.toggle_pin(false, agent)).to be(true)
+      message.reload
+
+      expect(message.pinned).to be(false)
+      expect(message.pinned_at).to be_nil
+      expect(message.pinned_by).to be_nil
+    end
+
+    it 'dispatches message updated with pinned in the realtime payload' do
+      message.toggle_pin(true, agent)
+
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+        .with(
+          described_class::MESSAGE_UPDATED,
+          kind_of(Time),
+          message: message,
+          performed_by: nil,
+          previous_changes: hash_including('pinned' => [false, true])
+        )
+      expect(message.push_event_data).to include(
+        pinned: true,
+        pinned_by_id: agent.id,
+        pinned_by: { id: agent.id, name: agent.name }
+      )
     end
   end
 

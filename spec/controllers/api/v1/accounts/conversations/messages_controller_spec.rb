@@ -205,6 +205,74 @@ RSpec.describe 'Conversation Messages API', type: :request do
     end
   end
 
+  describe 'POST /api/v1/accounts/{account.id}/conversations/:conversation_id/messages/:id/toggle_pin' do
+    let(:message) { create(:message, account: account) }
+    let(:conversation) { message.conversation }
+    let(:agent) { create(:user, account: account, role: :agent) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{message.id}/toggle_pin",
+             params: { pinned: true },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user with access to conversation' do
+      before do
+        create(:inbox_member, inbox: conversation.inbox, user: agent)
+      end
+
+      it 'pins the message and renders pinned serializer fields' do
+        freeze_time do
+          post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{message.id}/toggle_pin",
+               headers: agent.create_new_auth_token,
+               params: { pinned: true },
+               as: :json
+
+          expect(response).to have_http_status(:success)
+          expect(message.reload.pinned).to be(true)
+          expect(message.pinned_at.to_i).to eq(Time.current.to_i)
+          expect(message.pinned_by).to eq(agent)
+          expect(response.parsed_body['pinned']).to be(true)
+          expect(response.parsed_body['pinned_at']).to eq(Time.current.to_i)
+          expect(response.parsed_body['pinned_by']).to include('id' => agent.id, 'name' => agent.name)
+        end
+      end
+
+      it 'unpins the message and clears pinned serializer fields' do
+        message.update!(pinned: true, pinned_at: 1.hour.ago, pinned_by: agent)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{message.id}/toggle_pin",
+             headers: agent.create_new_auth_token,
+             params: { pinned: false },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(message.reload.pinned).to be(false)
+        expect(message.pinned_at).to be_nil
+        expect(message.pinned_by).to be_nil
+        expect(response.parsed_body['pinned']).to be(false)
+        expect(response.parsed_body['pinned_at']).to be_nil
+        expect(response.parsed_body['pinned_by']).to be_nil
+      end
+
+      it 'does not toggle a message outside the conversation' do
+        other_message = create(:message, account: account)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages/#{other_message.id}/toggle_pin",
+             headers: agent.create_new_auth_token,
+             params: { pinned: true },
+             as: :json
+
+        expect(response).to have_http_status(:not_found)
+        expect(other_message.reload.pinned).to be(false)
+      end
+    end
+  end
+
   describe 'DELETE /api/v1/accounts/{account.id}/conversations/:conversation_id/messages/:id' do
     let(:message) { create(:message, account: account, content_attributes: { bcc_emails: ['hello@chatwoot.com'] }) }
     let(:conversation) { message.conversation }
